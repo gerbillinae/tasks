@@ -1,0 +1,6 @@
+version: '3'
+
+includes:
+  install:
+    taskfile: ./install/Taskfile.yml
+    dir: ./

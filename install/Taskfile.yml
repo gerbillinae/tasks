@@ -1,0 +1,123 @@
+version: '3'
+
+tasks:
+  nvim:
+    status:
+      - test ! -z "`which nvim`"
+    cmds:
+      - mkdir tmp
+      - cd tmp
+      - wget https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz 
+      - tar -xvzf nvim-linux64.tar.gz
+      - mv nvim-linux64 ~/.
+      - ln -s ~/nvim-linux64/bin/nvim ~/.local/bin/nvim
+      - cd ..
+      - rm -r tmp
+
+  rust:
+    status:
+      - test ! -z "`which cargo`"
+    cmds:
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+  bashrc:
+    internal: true
+    cmds:
+      - source ~/.bashrc
+
+  treesitter:
+    deps: [rust, bashrc]
+    status:
+      - test ! -z "`cargo install --list | grep tree-sitter`"
+    cmds:
+      - cargo install tree-sitter-cli
+
+  ripgrep:
+    deps: [rust, bashrc]
+    status:
+      - test ! -z "`cargo install --list | grep ripgrep`"
+    cmds:
+      - cargo install ripgrep
+
+  delta:
+    deps: [rust, bashrc]
+    status:
+      - test ! -z "`cargo install --list | grep 'git-delta'`"
+    cmds:
+      - cargo install git-delta
+
+  bat:
+    deps: [rust, bashrc]
+    status:
+      - test ! -z "`cargo install --list | grep "^bat\s"`"
+    cmds:
+      - cargo install bat
+
+  nvm:
+    status:
+      - test ! -z "`which nvm`"
+    cmds:
+      - wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+      - source ~/.bashrc
+      - nvm install --lts
+
+  venv:
+    status:
+      - test ! -z "`apt list | grep ^python3.11-venv/`"
+    cmds:
+      - sudo apt update
+      - sudo apt install python3.11-venv -y
+      - python3 -m venv ~/venv
+      - echo "source ~/venv/bin/activate" >> ~/.bashrc
+
+  bottom:
+    deps: [rust, bashrc]
+    status:
+      - test ! -z "`cargo install --list | grep "^bottom\s"`"
+    cmds:
+      - cargo install bottom --locked
+
+  gdu:
+    status:
+      - test -f ~/.local/bin/gdu 
+    cmds:
+      - mkdir tmp
+      - cd tmp
+      - curl -L https://github.com/dundee/gdu/releases/latest/download/gdu_linux_amd64.tgz | tar xz
+      - chmod +x gdu_linux_amd64
+      - mv gdu_linux_amd64 ~/.local/bin/gdu
+      - cd ..
+      - rm -r tmp
+
+  golang:
+    status:
+      - go version
+    cmds:
+      - curl -L https://go.dev/dl/go1.23.2.linux-amd64.tar.gz | tar xz
+      - mv go ~/.
+      - echo "export PATH=$PATH:~/go/bin" >> ~/.bashrc
+
+  lazygit:
+     deps: [golang]
+     status:
+       - test -f $HOME/go/bin/lazygit
+     cmds:
+       - go install github.com/jesseduffield/lazygit@latest
+
+  astronvim:
+    desc: "Astronvim: Neovim distribution"
+    deps: [nvim, gdu, venv, lazygit, ripgrep, treesitter]
+    cmds:
+      - mv ~/.config/nvim ~/config/nvim.old
+      - git clone --depth 1 https://github.com/AstroNvim/template ~/.config/nvim
+      - rm -rf ~/.config/nvim/.git
+      - nvim --headless +AstroUpdate +qa
+
+  pkl:
+    status:
+      - test -f ~/.local/bin/pkl
+    cmds:
+      - cd tmp
+      - curl -L -o pkl 'https://github.com/apple/pkl/releases/download/0.26.3/pkl-linux-amd64'
+      - chmod +x pkl
+      - mv pkl ~/.local/bin/.
